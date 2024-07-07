@@ -23,7 +23,7 @@ class CustomerApiController extends Controller
         if (Auth::user()->role !== 'user') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        $validator = Validator::make($request->all(),[
+        $validator = Validator::make($request->all(), [
             'subject' => 'required|string',
             'user_id' => 'required|exists:users,id',
             'message' => 'required|string',
@@ -43,10 +43,10 @@ class CustomerApiController extends Controller
     public function show($id)
     {
         $ticket = Ticket::findOrFail($id);
-    if (Auth::user()->id !==$ticket->technician_id && Auth::user()->id !== $ticket->customer_id) 
-    {
-        return response()->json(['message' => 'Unauthorized'], 403);
-    }
+        if (Auth::user()->id !==$ticket->technician_id && Auth::user()->id !== $ticket->customer_id) 
+        {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         return response()->json($ticket);
     }
     public function feedback(Request $request)
@@ -79,14 +79,14 @@ class CustomerApiController extends Controller
     public function viewFeedback($id)
     {
         $ticket = Ticket::find($id);
-    
+
         if (!$ticket) {
             return response()->json(['message' => 'Ticket not found'], 404);
         }
-    
+
         if (Auth::user()->id !== $ticket->customer_id) {
             return response()->json(['message' => 'Unauthorized'], 403);
-        }  
+        }
         return response()->json([
             'customer_id' => $ticket->user_id,
             'technician_id' => $ticket->technician_id,
@@ -95,5 +95,4 @@ class CustomerApiController extends Controller
             'feedback_rate' => $ticket->feedback_rate,
         ], 200);
     }
-    
 }
