@@ -7,5 +7,5 @@
 <li>php artisan migrate --seed</li>
 <li>php artisan serve</li>
 
-<p>Please insert this to env file for testing the admin</p>
+<h2>Please insert this to env file for Folder Api in order to test Admin Api Work</h2>
 <li>ADMIN_USER_ID=1</li>
