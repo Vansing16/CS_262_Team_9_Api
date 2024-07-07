@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
@@ -29,9 +30,9 @@ class AdminManagement extends Controller
         if (!$this->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-    
+
         $tickets = Ticket::all();
-        return response()->json($tickets);      
+        return response()->json($tickets);
     }
     public function index()
     {
@@ -49,18 +50,20 @@ class AdminManagement extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $validator = Validator::make($request->all(), 
-        [
-            'name' =>'required|string|max:50',
-            'email' =>'required|email',
-            'password' =>'required|string|min:6',
-            'phone' =>'required',
-            'profile_image' =>'nullable|image',
-            'date_of_birth' =>'nullable',
-            'nationality' =>'nullable',
-            'status' => 'nullable|in:idle,online,offline',
-            'role' => 'nullable|in:user,technician',
-        ]);
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'name' => 'required|string|max:50',
+                'email' => 'required|email',
+                'password' => 'required|string|min:6',
+                'phone' => 'required',
+                'profile_image' => 'nullable|image',
+                'date_of_birth' => 'nullable',
+                'nationality' => 'nullable',
+                'status' => 'nullable|in:idle,online,offline',
+                'role' => 'nullable|in:user,technician',
+            ]
+        );
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 400);
         }
@@ -136,16 +139,42 @@ class AdminManagement extends Controller
         if (!$this->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
+
         $user = User::findOrFail($id);
-        $tickets = Ticket::where('customer_id', $id)->orWhere('technician_id', $id)->get();
-        foreach ($tickets as $ticket) {
-            Message::where('ticket_id', $ticket->id)->delete();
-            $ticket->delete();
+
+        // Check if the user is a technician
+        if ($user->role === 'technician') {
+            $ticketsAsTechnician = Ticket::where('technician_id', $id)->get();
+
+            // Delete all messages where the user is a technician
+            foreach ($ticketsAsTechnician as $ticket) {
+                Message::where('ticket_id', $ticket->id)->delete();
+                $ticket->technician_id = null; // Unassign technician
+                $ticket->save();
+            }
+        } else {
+            $ticketsAsCustomer = Ticket::where('customer_id', $id)->get();
+            $ticketsAsTechnician = Ticket::where('technician_id', $id)->get();
+
+            // Delete all tickets and messages where the user is a customer
+            foreach ($ticketsAsCustomer as $ticket) {
+                Message::where('ticket_id', $ticket->id)->delete();
+                $ticket->delete();
+            }
+
+            // Delete all messages where the user is a technician
+            foreach ($ticketsAsTechnician as $ticket) {
+                Message::where('ticket_id', $ticket->id)->delete();
+                $ticket->technician_id = null; // Unassign technician
+                $ticket->save();
+            }
         }
+
         $user->delete();
 
-        return response()->json(['message' => 'User: '.$user->name.' is deleted']);
+        return response()->json(['message' => 'User: ' . $user->name . ' is deleted'], 202);
     }
+
 
     public function assignTicket(Request $request)
     {
@@ -154,8 +183,8 @@ class AdminManagement extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:users,email', 
-            'ticket_id' => 'required|exists:tickets,id', 
+            'email' => 'required|email|exists:users,email',
+            'ticket_id' => 'required|exists:tickets,id',
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -173,7 +202,7 @@ class AdminManagement extends Controller
         $ticket->technician_id = $user->id;
         $ticket->save();
 
-        return response()->json(['message' => 'Ticket is assigned to '. $user->name], 200);
+        return response()->json(['message' => 'Ticket is assigned to ' . $user->name], 200);
     }
 
     public function viewFeedback($id)
