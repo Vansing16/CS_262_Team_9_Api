@@ -23,6 +23,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 Route::post('/login', [AccountAPI::class, 'login']);
+Route::post('/logout', [AccountAPI::class, 'logout']);
 Route::post('/Customer/acc', [AccountAPI::class, 'create']);
 
 Route::group(['prefix' => 'Admin', 'middleware' => 'auth:sanctum'], function () {

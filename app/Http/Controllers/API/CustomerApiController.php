@@ -33,7 +33,9 @@ class CustomerApiController extends Controller
             'feedback_message' => 'nullable|string',
             'feedback_rate' => 'nullable|integer|min:1|max:5',
         ]);
-
+        if (Auth::user()->id !== (int)$request->customer_id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $ticket = Ticket::create($request->all());
 
         return response()->json($ticket, 201);

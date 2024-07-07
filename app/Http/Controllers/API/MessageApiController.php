@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -11,23 +12,32 @@ use Illuminate\Support\Facades\Validator;
 
 class MessageApiController extends Controller
 {
+    protected function isAdmin()
+    {
+        return Auth::id() == env('ADMIN_USER_ID');
+    }
     public function sendMessage(Request $request)
     {
         if (Auth::user()->role !== 'user') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        $validator = Validator::make($request->all(),[
+    
+        $validator = Validator::make($request->all(), [
             'ticket_id' => 'required|exists:tickets,id',
             'message' => 'nullable|string',
             'image' => 'nullable|image|max:4096',
         ]);
+    
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 400);
         }
+    
         $ticket = Ticket::findOrFail($request->ticket_id);
+    
         if (Auth::user()->id !== $ticket->customer_id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
+    
         $message = Message::create([
             'ticket_id' => $request->ticket_id,
             'customer_id' => $ticket->customer_id,
@@ -36,9 +46,6 @@ class MessageApiController extends Controller
             'message' => $request->message,
             'image' => $request->image,
         ]);
-
-    
-        $message->save();
     
         return response()->json([
             'success' => true,
@@ -51,7 +58,7 @@ class MessageApiController extends Controller
         if (Auth::user()->role !== 'technician') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        $validator = Validator::make($request->all(),[
+        $validator = Validator::make($request->all(), [
             'ticket_id' => 'required|exists:tickets,id',
             'message' => 'nullable|string',
             'image' => 'nullable|image|max:4096',
@@ -59,7 +66,7 @@ class MessageApiController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 400);
         }
-        
+
         $ticket = Ticket::findOrFail($request->ticket_id);
         if (Auth::user()->id !== $ticket->technician_id) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -74,7 +81,7 @@ class MessageApiController extends Controller
         ]);
 
         $message->save();
-    
+
         return response()->json([
             'success' => true,
             'message' => 'Message sent successfully!',
@@ -95,26 +102,26 @@ class MessageApiController extends Controller
         $ticketId = $request->input('ticket_id');
 
         try {
-  
+
             $messages = Message::where('ticket_id', $ticketId)
                 ->orderBy('created_at', 'asc')
                 ->get();
 
             $ticket = Ticket::findOrFail($ticketId);
-            if (Auth::user()->role !== 'admin' && Auth::user()->id !== $ticket->customer_id && Auth::user()->id !== $ticket->technician_id) {
+            if (!$this->isAdmin() && Auth::user()->id !== $ticket->customer_id && Auth::user()->id !== $ticket->technician_id) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
             $showticket = [
-                'id' =>$ticket->id,
-                'subject'=>$ticket->subject, 
-                'message'=>$ticket->message, 
+                'id' => $ticket->id,
+                'subject' => $ticket->subject,
+                'message' => $ticket->message,
 
             ];
-            
-            $showmessage = $messages->map(function($message) {
+
+            $showmessage = $messages->map(function ($message) {
                 return [
-                'sender'=>$message->sender_type, 
-                'message'=>$message->message,
+                    'sender' => $message->sender_type,
+                    'message' => $message->message,
                 ];
             });
             return response()->json([
@@ -127,14 +134,13 @@ class MessageApiController extends Controller
     }
     public function updateStatus(Request $request)
     {
-         $validator = ticket::where('id', $request->id)->update([
+        $validator = ticket::where('id', $request->id)->update([
             'status' => $request->status,
         ]);
         if (!$validator) {
             return response()->json(['message' => 'Ticket not found'], 404);
         }
 
-        return response()->json(['message'=> 'Status change'], 200);
+        return response()->json(['message' => 'Status change'], 200);
     }
-
 }

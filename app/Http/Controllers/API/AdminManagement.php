@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Ticket;
 use Illuminate\Http\JsonResponse;
+use App\Models\Admin;
 
 class AdminManagement extends Controller
 {
@@ -88,15 +89,14 @@ class AdminManagement extends Controller
             'id' => 'required|exists:users,id',
             'name' => 'nullable|string|max:50',
             'email' => 'nullable|email',
-            'password' => 'nullable|string|min:6',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 400);
         }
 
-        $user = User::findOrFail($request->id);
-        $user->update($request->only(['name', 'email', 'password']));
+        $user = Admin::findOrFail($request->id);
+        $user->update($request->only(['name', 'email']));
 
         return response()->json('Update Success!', 200);
     }

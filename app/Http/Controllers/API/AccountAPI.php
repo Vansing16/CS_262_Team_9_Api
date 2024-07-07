@@ -52,7 +52,7 @@ class AccountAPI extends Controller
     public function update(Request $request)
     {
         $user = User::find($request->id);
-        if (Auth::user()->role !== 'user'&& Auth::user()->role !== 'technician') {
+        if (Auth::user()->id !==$user->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }         
         $validator = Validator::make($request->all(), [
@@ -113,6 +113,27 @@ class AccountAPI extends Controller
             $success['token'] = $user->createToken('Token')->plainTextToken;
             $success['name'] = $user->name;
             return response()->json(['success' => $success], 200);
+        } else {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+    }
+    
+    public function logout(Request $request): JsonResponse
+    {
+        if ($request->user('sanctum') instanceof \App\Models\Admin) {
+            $admin = $request->user('sanctum');
+            if ($admin) {
+            $admin->currentAccessToken()->delete();
+            return response()->json(['success' => 'Logged out successfully', 'id' => $admin->id, 'name' => $admin->name], 200);
+            } else {
+            return response()->json(['error' => 'Unauthorized'], 401);
+            }
+        }
+
+        $user = $request->user('sanctum');
+        if ($user) {
+            $user->currentAccessToken()->delete();
+            return response()->json(['success' => 'Logged out successfully', 'id' => $user->id, 'name' => $user->name,], 200);
         } else {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
