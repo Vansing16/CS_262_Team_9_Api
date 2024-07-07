@@ -6,3 +6,6 @@
 <li>php artisan key:generate</li>
 <li>php artisan migrate --seed</li>
 <li>php artisan serve</li>
+
+Please insert this to env file for testing the admin
+ADMIN_USER_ID=1
