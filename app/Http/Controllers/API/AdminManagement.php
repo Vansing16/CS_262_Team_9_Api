@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Ticket;
 use Illuminate\Http\JsonResponse;
 use App\Models\Admin;
+use App\Models\Message;
 
 class AdminManagement extends Controller
 {
@@ -136,6 +137,11 @@ class AdminManagement extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         $user = User::findOrFail($id);
+        $tickets = Ticket::where('customer_id', $id)->orWhere('technician_id', $id)->get();
+        foreach ($tickets as $ticket) {
+            Message::where('ticket_id', $ticket->id)->delete();
+            $ticket->delete();
+        }
         $user->delete();
 
         return response()->json(['message' => 'User: '.$user->name.' is deleted']);
